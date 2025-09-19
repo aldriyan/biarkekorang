@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracker Sayangku</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .bg-gradient-sayang {
+            background-image: linear-gradient(135deg, #FFB6C1 0%, #FFDAB9 100%);
+        }
+        .heart {
+            position: absolute;
+            background-color: #EF4444; /* Merah */
+            width: 20px;
+            height: 20px;
+            transform: rotate(-45deg);
+            animation: fall 5s linear infinite;
+        }
+        .heart::before, .heart::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #EF4444;
+        }
+        .heart::before {
+            top: -10px;
+            left: 0;
+        }
+        .heart::after {
+            top: 0;
+            left: 10px;
+        }
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(-45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(315deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-sayang min-h-screen flex flex-col items-center p-4 text-gray-800">
+    <!-- Kontainer Utama -->
+    <div class="bg-white/70 backdrop-blur-md rounded-3xl p-4 sm:p-8 max-w-lg w-full shadow-xl">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 text-pink-500">Mood Harian Indri</h1>
+        <p class="text-base sm:text-lg text-center text-gray-600 mb-8">Pilih emoji yang paling menggambarkan perasaanmu hari ini, dan ceritakan sedikit ya.</p>
+
+        <!-- Pilihan Mood -->
+        <div class="flex flex-wrap justify-center gap-4 mb-6 text-4xl sm:text-5xl">
+            <button class="mood-btn p-4 rounded-full transition-all hover:scale-110 active:scale-95 hover:bg-pink-100" data-mood="Senang" data-emoji="😄">😄</button>
+            <button class="mood-btn p-4 rounded-full transition-all hover:scale-110 active:scale-95 hover:bg-pink-100" data-mood="Sedih" data-emoji="😢">😢</button>
+            <button class="mood-btn p-4 rounded-full transition-all hover:scale-110 active:scale-95 hover:bg-pink-100" data-mood="Lelah" data-emoji="😴">😴</button>
+            <button class="mood-btn p-4 rounded-full transition-all hover:scale-110 active:scale-95 hover:bg-pink-100" data-mood="Kangen" data-emoji="🥺">🥺</button>
+            <button class="mood-btn p-4 rounded-full transition-all hover:scale-110 active:scale-95 hover:bg-pink-100" data-mood="Semangat" data-emoji="💪">💪</button>
+        </div>
+
+        <!-- Catatan Singkat -->
+        <textarea id="mood-note" placeholder="Tulis catatanmu di sini..." class="w-full h-24 p-4 mb-4 rounded-2xl bg-white/50 border-2 border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all text-gray-700"></textarea>
+
+        <!-- Tombol Simpan -->
+        <button id="save-mood-btn" class="w-full bg-pink-500 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:bg-pink-600 transition-all transform hover:scale-105 active:scale-100">Simpan Mood</button>
+        
+        <!-- Tombol WhatsApp baru -->
+        <a href="https://wa.me/6282230353419" target="_blank" class="block mt-4 w-full text-center bg-green-500 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100">
+            Chat Pacarku di WhatsApp
+        </a>
+    </div>
+
+    <!-- Riwayat Mood (7 Hari Terakhir) -->
+    <div class="bg-white/70 backdrop-blur-md rounded-3xl p-4 sm:p-8 max-w-lg w-full shadow-xl mt-8">
+        <h2 class="text-xl sm:text-2xl font-bold mb-4 text-pink-500">Riwayat Mood 7 Hari Terakhir</h2>
+        <div id="mood-history-container" class="space-y-4">
+            <!-- Data riwayat akan ditampilkan di sini oleh JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal Pesan Romantis -->
+    <div id="romantic-message-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm text-center shadow-2xl relative">
+            <h3 class="text-2xl sm:text-3xl font-bold text-pink-600 mb-4" id="modal-title"></h3>
+            <p class="text-base sm:text-lg text-gray-700 mb-6" id="modal-message"></p>
+            <button id="close-modal-btn" class="bg-pink-500 text-white font-semibold py-2 px-6 rounded-2xl transition-all hover:bg-pink-600">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Alur Logika Aplikasi & Struktur Database (dalam komentar JS) -->
+    <script>
+        // Alur Logika Aplikasi:
+        // 1. Inisialisasi: Saat halaman dimuat, cek data mood di localStorage.
+        // 2. Tampilan Riwayat: Render riwayat mood 7 hari terakhir ke UI.
+        // 3. Pilihan Mood:
+        //    - Saat tombol emoji diklik, simpan mood dan emoji yang dipilih.
+        // 4. Simpan Data:
+        //    - Saat tombol "Simpan Mood" diklik, ambil mood dan catatan.
+        //    - Buat objek data baru.
+        //    - Simpan objek ke array data mood di localStorage.
+        //    - Panggil fungsi untuk menampilkan pesan romantis.
+        //    - Update tampilan riwayat mood.
+        // 5. Pesan Romantis:
+        //    - Tampilkan modal dengan pesan romantis yang sesuai dengan mood.
+        //    - Pesan ini diatur dalam objek di JavaScript.
+        // 6. Animasi:
+        //    - Panggil fungsi animasi hati saat modal pesan romantis muncul.
+
+        // Struktur Database (menggunakan localStorage):
+        // Kita akan menyimpan data dalam format JSON di localStorage.
+        // Nama data: 'moodTrackerData'
+        // Format data: Array of Objects
+        // Contoh:
+        // [{
+        //     date: '2023-10-26',
+        //     moodEmoji: '😄',
+        //     moodText: 'Senang',
+        //     note: 'Hari ini kita jalan-jalan!',
+        //     romanticMessage: 'Aku ikut bahagia kalau kamu bahagia 😘'
+        // }]
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const moodButtons = document.querySelectorAll('.mood-btn');
+            const saveBtn = document.getElementById('save-mood-btn');
+            const moodNote = document.getElementById('mood-note');
+            const historyContainer = document.getElementById('mood-history-container');
+            const modal = document.getElementById('romantic-message-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            let selectedMood = '';
+            let selectedEmoji = '';
+
+            const romanticMessages = {
+                'Senang': 'Aku ikut bahagia kalau kamu bahagia, Sayang 😘',
+                'Sedih': 'Sayang, jangan sedih ya, aku peluk kamu virtual dulu ❤️',
+                'Lelah': 'Sini, aku pijat punggungmu. Istirahat yang cukup ya, Sayangku 😴',
+                'Kangen': 'Aku juga kangen banget sama kamu! Sampai ketemu nanti ya 🥰',
+                'Semangat': 'Wah, hebat! Semangat terus, Sayang. Aku selalu mendukungmu 💪'
+            };
+
+            function saveMood() {
+                const today = new Date().toISOString().slice(0, 10);
+                const currentNote = moodNote.value.trim();
+
+                if (!selectedMood) {
+                    // Buat pop-up sederhana
+                    const tempDiv = document.createElement('div');
+                    tempDiv.textContent = 'Pilih moodmu dulu, Sayangku!';
+                    tempDiv.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-400 text-white px-6 py-3 rounded-xl shadow-lg z-[100] animate-bounce';
+                    document.body.appendChild(tempDiv);
+                    setTimeout(() => tempDiv.remove(), 2000);
+                    return;
+                }
+
+                const moodData = JSON.parse(localStorage.getItem('moodTrackerData') || '[]');
+                
+                const todayMoodIndex = moodData.findIndex(item => item.date === today);
+                
+                const newEntry = {
+                    date: today,
+                    moodText: selectedMood,
+                    moodEmoji: selectedEmoji,
+                    note: currentNote
+                };
+
+                if (todayMoodIndex !== -1) {
+                    moodData[todayMoodIndex] = newEntry;
+                } else {
+                    moodData.push(newEntry);
+                }
+
+                localStorage.setItem('moodTrackerData', JSON.stringify(moodData));
+                
+                displayRomanticMessage(selectedMood);
+                renderMoodHistory();
+                moodNote.value = '';
+                selectedMood = '';
+                selectedEmoji = '';
+                moodButtons.forEach(btn => btn.classList.remove('ring-4', 'ring-pink-500'));
+            }
+
+            function displayRomanticMessage(mood) {
+                modalTitle.textContent = `Pesan untukmu, Sayangku!`;
+                modalMessage.textContent = romanticMessages[mood];
+                modal.classList.remove('hidden');
+                
+                // Tambahkan animasi hati
+                createHeartAnimation();
+            }
+
+            function renderMoodHistory() {
+                historyContainer.innerHTML = '';
+                const moodData = JSON.parse(localStorage.getItem('moodTrackerData') || '[]');
+                
+                // Urutkan berdasarkan tanggal terbaru
+                const sortedData = moodData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // Ambil 7 data terakhir
+                const recentData = sortedData.slice(0, 7);
+
+                if (recentData.length === 0) {
+                    historyContainer.innerHTML = `<p class="text-center text-gray-500">Belum ada data mood. Ayo, isi mood pertamamu!</p>`;
+                    return;
+                }
+
+                recentData.forEach(item => {
+                    const date = new Date(item.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'bg-white/50 p-4 rounded-xl shadow-inner flex items-center space-x-4';
+                    historyItem.innerHTML = `
+                        <span class="text-3xl">${item.moodEmoji}</span>
+                        <div>
+                            <p class="font-bold text-lg">${date}</p>
+                            <p class="text-gray-600">${item.note}</p>
+                        </div>
+                    `;
+                    historyContainer.appendChild(historyItem);
+                });
+            }
+
+            function createHeartAnimation() {
+                for (let i = 0; i < 20; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.style.left = `${Math.random() * 100}vw`;
+                    heart.style.animationDuration = `${Math.random() * 2 + 3}s`; // durasi acak
+                    heart.style.animationDelay = `${Math.random() * 2}s`; // tunda acak
+                    document.body.appendChild(heart);
+                }
+            }
+
+            // Event Listeners
+            moodButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    moodButtons.forEach(btn => btn.classList.remove('ring-4', 'ring-pink-500'));
+                    button.classList.add('ring-4', 'ring-pink-500');
+                    selectedMood = button.dataset.mood;
+                    selectedEmoji = button.dataset.emoji;
+                });
+            });
+
+            saveBtn.addEventListener('click', saveMood);
+            closeModalBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                document.querySelectorAll('.heart').forEach(h => h.remove());
+            });
+
+            // Inisialisasi tampilan
+            renderMoodHistory();
+        });
+    </script>
+</body>
+</html>
